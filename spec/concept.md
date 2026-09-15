@@ -1,7 +1,7 @@
 # Concept: ThreadNote (Personal Knowledge Management Mobile System)
 
 ## 1. Overview
-MindMesh is a cross-platform mobile application built with React Native and Expo, designed for personal knowledge management (PKM). It serves as a digital "second brain," enabling users to capture notes in Markdown, link related ideas using bidirectional references, and visualize their knowledge base as an interactive graph.
+Lalala is a cross-platform mobile application built with React Native and Expo, designed for personal knowledge management (PKM). It serves as a digital "second brain," enabling users to capture notes in Markdown, link related ideas using bidirectional references, and visualize their knowledge base as an interactive graph.
 
 ## 2. Core Features
 - **Markdown Note Editor:** Create, edit, and store individual notes locally with clean syntax support and a quick-toolbar for formatting.

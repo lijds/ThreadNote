@@ -1,14 +1,15 @@
 # Coding Agent Profile & Capabilities
 
 ## 1. Tool Classification
-- **Tool Name:** Roo Code (VS Code Extension) powered by Google Gemini (`gemini-3-flash-preview` / Google AI Studio API)
-- **Tool Class:** IDE-integrated, LLM-powered autonomous coding agent capable of executing file operations, shell commands, and structured workspace navigation.
+- **Tool Name:** GitHub Copilot in Visual Studio Code
+- **Tool Class:** IDE-integrated AI coding assistant that analyzes the workspace, explains code, proposes focused changes, and validates implementation results.
 
 ## 2. Repository Access Method
-- **Access Type:** Direct workspace and local file-system interaction via extension permissions.
-- **Details:** The agent connects to the local Git repository through the VS Code extension interface using an authorized API key from Google AI Studio. It reads local files, indexes directories, and proposes or applies code patches directly within the working tree.
+- **Access Type:** Direct interaction with the currently opened workspace through VS Code tools.
+- **Details:** The agent reads relevant project files, searches for definitions and references, applies targeted patches, and works with the existing Git working tree without discarding unrelated user changes.
 
-## 3. Permitted Workspace Operations
-- **File & Directory Management:** Creating, reading, editing, and deleting files across structural directories (`/spec`, `/src`, `/tests`, `/docs`, `/logs`).
-- **Command Line Execution:** Running terminal commands (such as testing, package management, and Git workflows) under user approval.
-- **Version Control Guidance:** Assisting with repository initialization, staging, committing, and remote synchronization.
+## 3. Workspace Operations
+- **File Management:** Reading and editing project files in directories such as `/spec`, `/src`, `/tests`, `/docs`, and `/logs`.
+- **Validation:** Running focused tests, type checks, linters, and other available diagnostics after changes.
+- **Terminal and Git:** Executing repository commands when needed, including inspection of history and status. Commits, pushes, and other remote operations are performed only when explicitly requested.
+- **Engineering Support:** Helping with implementation, debugging, documentation, code review, and incremental repository maintenance while following the project guidelines.

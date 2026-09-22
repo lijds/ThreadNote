@@ -1,0 +1,15 @@
+# <type>: <short summary>
+#
+# Examples:
+# feat: add note graph view
+# docs: add SRS and glossary
+# fix: correct backlink generation
+#
+# Valid types:
+#   feat, fix, docs, chore, refactor, test, perf, style, build, ci, revert
+#
+# Rules:
+# - Use imperative mood
+# - Keep subject line short
+# - Do not end with a period
+# - Add a body if the change is non-trivial

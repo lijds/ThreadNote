@@ -1,8 +1,8 @@
-# Реєстр ризиків проєкту ThreadNote v1
+# ThreadNote v1 Risk Register
 
-| ID | Назва ризику | Категорія критичності | Прояв та наслідки | Метод мітигації |
+| ID | Risk | Severity | Symptoms and Consequences | Mitigation |
 | :--- | :--- | :--- | :--- | :--- |
-| **R-01** | Неправильне тлумачення вимог агентом | Високий | Генерація коду з порушенням архітектурних обмежень. | Жорстка фіксація правил у промптах та опора на Acceptance Criteria. |
-| **R-02** | Кореляція помилок між кодом і тестами | Критичний | Агент пише помилковий код і водночас «підтверджуючі» тести до нього. | Самостійний аудит тестових сценаріїв та додавання власних edge-case тестів. |
-| **R-03** | Проблеми з продуктивністю графа (`NFR-03`) | Високий | Зависання інтерфейсу при досягненні ліміту в 500 нотаток. | Раннє навантажувальне тестування з мокетними даними. |
-| **R-04** | «Втома рев'юера» | Високий | Поверхнева перевірка згенерованого коду людиною через високу швидкість агента. | Покрокове виконання завдань мікро-тікетами та суворий контроль гейтів. |
+| **R-01** | Misinterpretation of requirements by the agent | High | Code is generated in violation of architectural constraints. | Strictly document rules in prompts and rely on Acceptance Criteria. |
+| **R-02** | Correlation of errors between code and tests | Critical | The agent writes incorrect code and simultaneously creates tests that "confirm" it. | Independently audit test scenarios and add custom edge-case tests. |
+| **R-03** | Knowledge graph performance issues (`NFR-03`) | High | The interface becomes unresponsive when the 500-note limit is reached. | Run load tests early with mock data. |
+| **R-04** | Reviewer fatigue | High | A person performs a superficial review of generated code because of the agent's high delivery speed. | Work in small tasks and enforce strict gate controls. |

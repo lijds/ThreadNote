@@ -6,45 +6,36 @@ This matrix links the core requirements of ThreadNote v1 to the product decision
 
 ## 2. Requirement traceability table
 
-| ID | Requirement summary | Source / rationale | Validation approach | Priority |
-| --- | --- | --- | --- | --- |
-| FR-01 | Create, edit, open, and delete notes | Core PKM functionality | Manual UI test / CRUD test | Must |
-| FR-02 | Note data model includes required fields | Product specification | Data model validation test | Must |
-| FR-03 | Empty title auto-generates placeholder title | Product decision / UX requirement | Unit test for title normalization | Must |
-| FR-04 | Markdown editor supports core syntax | Product requirement | UI rendering test | Must |
-| FR-05 | Support internal links with `[[NoteName]]` syntax | Core knowledge-link feature | Parser test / integration test | Must |
-| FR-06 | Missing note links create placeholder draft | SKED decision | Behavior test for unresolved links | Must |
-| FR-07 | Backlinks are generated and displayed | Required product feature | Link graph test / UI test | Must |
-| FR-08 | Edit and preview modes are available | User experience requirement | UI toggle test | Must |
-| FR-09 | Autocomplete appears for `[[` input | UX requirement | Input test | Must |
-| FR-10 | Full-text search by title and content | Core note retrieval | Search test | Must |
-| FR-11 | Filter by tags | Product requirement | Filter test | Must |
-| FR-12 | Navigate via backlinks and graph | Core knowledge navigation | UI interaction test | Must |
-| FR-13 | Render ego-network around active note | Graph scope decision | UI and graph rendering test | Must |
-| FR-14 | Graph node click opens note | UX requirement | Interaction test | Must |
-| FR-15 | Graph zoom and pan supported | Mobile UX requirement | Gesture test | Must |
-| FR-16 | Search results sorted by recency and relevance | Product requirement | Search ranking check | Must |
-| FR-17 | Manual export/import support | Backup and safety requirement | Import/export test | Must |
-| FR-18 | Delete action requires confirmation | Safety requirement | Delete confirmation test | Must |
-| NFR-01 | Offline local-first operation | Core architecture decision | Offline mode validation | Must |
-| NFR-02 | Local storage in application sandbox | Platform constraint | Storage validation | Must |
-| NFR-03 | Performance for up to 500 notes | Product scale assumption | Performance benchmark | Must |
-| NFR-04 | Search and graph rendering remain smooth | UX/NFR requirement | Performance profiling | Must |
-| NFR-05 | Fast cold start in offline mode | Product requirement | Startup timing test | Must |
-| C-01 | Local-only v1 architecture | Product decision | Architecture review | Must |
-| C-02 | Graph is derived from note links | Design decision | Data-flow review | Must |
-| C-03 | Backlinks are both metadata and UI-visible block | Product requirement | UI and data validation | Must |
-| C-04 | `[[NoteName]]` syntax only; alias syntax excluded | Scope decision | Parser validation | Must |
-| C-05 | Graph limited to note-to-note relationships | Scope decision | Graph design review | Must |
-| C-06 | Graph shows only active note and first-neighbor nodes | Scope decision | UI review | Must |
-| C-07 | No local DB encryption in v1 | Security assumption | Architecture review | Must |
-| OOS-01 | No cloud sync | Explicit out-of-scope item | Scope review | Excluded |
-| OOS-02 | No real-time collaboration | Explicit out-of-scope item | Scope review | Excluded |
-| OOS-03 | No third-party cloud export integration | Explicit out-of-scope item | Scope review | Excluded |
-| OOS-04 | No multi-project / multi-space structure | Explicit out-of-scope item | Scope review | Excluded |
-| OOS-05 | No advanced semantic graph typing | Explicit out-of-scope item | Scope review | Excluded |
-| OOS-06 | No AI-based graph extraction | Explicit out-of-scope item | Scope review | Excluded |
-
+| ID | Requirement summary | Source / rationale | Validation approach | Priority | Ідентифікатори тікетів (GitHub Issues) |
+| --- | --- | --- | --- | --- | --- |
+| **FR-01** | Create, edit, open, and delete notes | Core PKM functionality | Manual UI test / CRUD test | Must | `#1`, `#2` (`[FR-01]`) |
+| **FR-02** | Note data model includes required fields | Product specification | Data model validation test | Must | `#3`, `#4` (`[FR-02]`), `#33` (`[TEST-01]`) |
+| **FR-03** | Empty title auto-generates placeholder title | Product decision / UX requirement | Unit test for title normalization | Must | `#5` (`[FR-03]`), `#33` (`[TEST-01]`) |
+| **FR-04** | Markdown editor supports core syntax | Product requirement | UI rendering test | Must | `#6` (`[FR-04]`), `#34` (`[TEST-02]`) |
+| **FR-05** | Support internal links with `[[NoteName]]` syntax | Core knowledge-link feature | Parser test / integration test | Must | `#7`, `#8` (`[FR-05]`), `#35` (`[TEST-03]`) |
+| **FR-06** | Missing note links create placeholder draft | SKED decision | Behavior test for unresolved links | Must | `#9` (`[FR-06]`), `#35` (`[TEST-03]`) |
+| **FR-07** | Backlinks are generated and displayed | Required product feature | Link graph test / UI test | Must | `#10`, `#11` (`[FR-07]`), `#36` (`[TEST-04]`) |
+| **FR-08** | Edit and preview modes are available | User experience requirement | UI toggle test | Must | `#12` (`[FR-08]`), `#34` (`[TEST-02]`) |
+| **FR-09** | Autocomplete appears for `[[` input | UX requirement | Input test | Must | `#13` (`[FR-09]`), `#35` (`[TEST-03]`) |
+| **FR-10** | Full-text search by title and content | Core note retrieval | Search test | Must | `#14` (`[FR-10]`), `#37` (`[TEST-05]`) |
+| **FR-11** | Filter by tags | Product requirement | Filter test | Must | `#15` (`[FR-11]`), `#37` (`[TEST-05]`) |
+| **FR-12** | Navigate via backlinks and graph | Core knowledge navigation | UI interaction test | Must | `#16`, `#17` (`[FR-12]`), `#36`, `#38` (`[TEST-04`, `TEST-06]`) |
+| **FR-13** | Render ego-network around active note | Graph scope decision | UI and graph rendering test | Must | `#18` (`[FR-13]`), `#38` (`[TEST-06]`) |
+| **FR-14** | Graph node click opens note | UX requirement | Interaction test | Must | `#19` (`[FR-14]`), `#38` (`[TEST-06]`) |
+| **FR-15** | Graph zoom and pan supported | Mobile UX requirement | Gesture test | Must | `#20` (`[FR-15]`), `#38` (`[TEST-06]`) |
+| **FR-16** | Search results sorted by recency and relevance | Product requirement | Search ranking check | Must | `#21` (`[FR-16]`), `#37` (`[TEST-05]`) |
+| **FR-17** | Manual export/import support | Backup and safety requirement | Import/export test | Must | `#22`, `#23` (`[FR-17]`), `#39` (`[TEST-07]`) |
+| **FR-18** | Delete action requires confirmation | Safety requirement | Delete confirmation test | Must | `#24` (`[FR-18]`), `#40` (`[TEST-08]`) |
+| **NFR-01** | Offline local-first operation | Core architecture decision | Offline mode validation | Must | `#25` (`[NFR-01]`), `#41` (`[TEST-09]`) |
+| **NFR-02** | Local storage in application sandbox | Platform constraint | Storage validation | Must | `#26` (`[NFR-02]`) |
+| **NFR-03** | Performance for up to 500 notes | Product scale assumption | Performance benchmark | Must | `#27` (`[NFR-03]`), `#41` (`[TEST-09]`) |
+| **NFR-04** | Search and graph rendering remain smooth | UX/NFR requirement | Performance profiling | Must | `#28` (`[NFR-04]`), `#41` (`[TEST-09]`) |
+| **NFR-05** | Fast cold start in offline mode | Product requirement | Startup timing test | Must | `#29` (`[NFR-05]`), `#41` (`[TEST-09]`) |
+| **NFR-06** | Local data integrity protection | Data safety | Integrity test | Must | `#30` (`[NFR-06]`), `#41` (`[TEST-09]`) |
+| **NFR-07** | Backup usability for non-experts | UX requirement | Usability check | Must | `#31` (`[NFR-07]`), `#39` (`[TEST-07]`) |
+| **NFR-08** | Responsive mobile layout | Mobile design | UI layout test | Must | `#32` (`[NFR-08]`), `#41` (`[TEST-09]`) |
+| **C-01 — C-07** | Архітектурні обмеження та дизайн-рішення v1 | Architecture review | Architectural review | Must | Забезпечується через загальну архітектуру та гейти (`#42`, `#43`) |
+| **OOS-01 — OOS-06** | Виключені з v1 функції (хмарне сховище, AI тощо) | Scope review | Scope exclusion | Excluded | Виключено з плану реалізації v1 |
 ## 3. Coverage overview
 
 The current matrix covers the core v1 scope:

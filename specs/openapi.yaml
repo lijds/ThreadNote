@@ -1,0 +1,551 @@
+openapi: 3.0.3
+info:
+  title: ThreadNote API
+  version: 1.0.0
+  license:
+    name: Academic project
+    url: https://github.com/lijds/ThreadNote
+  description: >-
+    REST API contract for ThreadNote v1. This specification is used for API
+    design and mock validation. Server implementation is out of scope for
+    the current laboratory work.
+servers:
+  - url: http://127.0.0.1:4010/api/v1
+    description: Local mock server
+
+security: []
+
+tags:
+  - name: Notes
+    description: Note lifecycle, search, filtering, and deletion
+  - name: Links
+    description: Internal links and backlinks
+  - name: Graph
+    description: First-degree note graph
+  - name: Backup
+    description: Manual export and import
+
+paths:
+  /notes:
+    get:
+      tags: [Notes]
+      summary: List, search, filter, and sort notes
+      operationId: listNotes
+      x-req-ids: [FR-01, FR-10, FR-11, FR-16]
+      parameters:
+        - $ref: '#/components/parameters/Query'
+        - $ref: '#/components/parameters/Tag'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of notes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags: [Notes]
+      summary: Create a note
+      operationId: createNote
+      x-req-ids: [FR-01, FR-02, FR-03, FR-05, FR-06, FR-07]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: Note created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /notes/{noteId}:
+    parameters:
+      - $ref: '#/components/parameters/NoteId'
+    get:
+      tags: [Notes]
+      summary: Get a note
+      operationId: getNote
+      x-req-ids: [FR-01, FR-02]
+      responses:
+        '200':
+          description: The requested note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Notes]
+      summary: Update a note
+      operationId: updateNote
+      x-req-ids: [FR-01, FR-02, FR-03, FR-05, FR-07]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: Note updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Notes]
+      summary: Delete a note after explicit confirmation
+      operationId: deleteNote
+      x-req-ids: [FR-01, FR-18]
+      parameters:
+        - name: confirm
+          in: query
+          required: true
+          description: Must be true to confirm permanent deletion.
+          schema:
+            type: boolean
+      responses:
+        '204':
+          description: Note deleted
+        '400':
+          description: The required confirmation parameter is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Explicit deletion confirmation is false
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notes/{noteId}/backlinks:
+    parameters:
+      - $ref: '#/components/parameters/NoteId'
+    get:
+      tags: [Links]
+      summary: Get notes that link to a note
+      operationId: getBacklinks
+      x-req-ids: [FR-07, FR-12]
+      responses:
+        '200':
+          description: Backlinks for the note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacklinkListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /notes/{noteId}/links/resolve:
+    parameters:
+      - $ref: '#/components/parameters/NoteId'
+    post:
+      tags: [Links]
+      summary: Resolve an internal link and create a placeholder if needed
+      operationId: resolveLink
+      x-req-ids: [FR-05, FR-06, FR-07]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveLinkRequest'
+      responses:
+        '200':
+          description: Existing target note resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResolveLinkResponse'
+        '201':
+          description: Placeholder note created and resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResolveLinkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /notes/{noteId}/graph:
+    parameters:
+      - $ref: '#/components/parameters/NoteId'
+    get:
+      tags: [Graph]
+      summary: Get the note ego-network
+      operationId: getNoteGraph
+      x-req-ids: [FR-12, FR-13, FR-14]
+      parameters:
+        - name: depth
+          in: query
+          required: false
+          description: Graph depth. v1 supports first-degree neighbors only.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1
+            default: 1
+      responses:
+        '200':
+          description: Active note and its first-degree neighbors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Graph'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /backup/export:
+    get:
+      tags: [Backup]
+      summary: Export notes as a backup document
+      operationId: exportBackup
+      x-req-ids: [FR-17]
+      responses:
+        '200':
+          description: Portable backup document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupDocument'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /backup/import:
+    post:
+      tags: [Backup]
+      summary: Import notes from a backup document
+      operationId: importBackup
+      x-req-ids: [FR-17]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupDocument'
+      responses:
+        '200':
+          description: Import completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+components:
+  parameters:
+    NoteId:
+      name: noteId
+      in: path
+      required: true
+      description: Unique note identifier
+      schema:
+        type: string
+        minLength: 1
+    Query:
+      name: query
+      in: query
+      required: false
+      description: Search text matched against title and body
+      schema:
+        type: string
+    Tag:
+      name: tag
+      in: query
+      required: false
+      description: Return only notes containing this tag
+      schema:
+        type: string
+    Sort:
+      name: sort
+      in: query
+      required: false
+      description: Search result ordering
+      schema:
+        type: string
+        enum: [relevance, recency]
+        default: relevance
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Request parameters or syntax are invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Requested resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Import conflicts with existing local data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Request body failed validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Note:
+      type: object
+      required: [id, title, body, tags, createdAt, updatedAt, backlinks]
+      properties:
+        id:
+          type: string
+          example: note-123
+        title:
+          type: string
+          minLength: 1
+          example: Project plan
+        body:
+          type: string
+          example: '# Project plan'
+        tags:
+          type: array
+          items:
+            type: string
+          example: [work, planning]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        backlinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Backlink'
+
+    NoteSummary:
+      type: object
+      required: [id, title, updatedAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateNoteRequest:
+      type: object
+      required: [body]
+      properties:
+        title:
+          type: string
+          description: Optional. A placeholder title is generated when absent or empty.
+        body:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+          default: []
+
+    UpdateNoteRequest:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    NoteListResponse:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteSummary'
+        total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+
+    Backlink:
+      type: object
+      required: [id, title]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        linkText:
+          type: string
+          example: '[[Project plan]]'
+
+    BacklinkListResponse:
+      type: object
+      required: [noteId, items]
+      properties:
+        noteId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Backlink'
+
+    ResolveLinkRequest:
+      type: object
+      required: [targetTitle]
+      properties:
+        targetTitle:
+          type: string
+          minLength: 1
+          example: Research notes
+
+    ResolveLinkResponse:
+      type: object
+      required: [created, note]
+      properties:
+        created:
+          type: boolean
+        note:
+          $ref: '#/components/schemas/Note'
+
+    Graph:
+      type: object
+      required: [center, nodes, edges]
+      properties:
+        center:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphEdge'
+
+    GraphNode:
+      type: object
+      required: [id, title]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+
+    GraphEdge:
+      type: object
+      required: [source, target]
+      properties:
+        source:
+          type: string
+        target:
+          type: string
+
+    BackupDocument:
+      type: object
+      required: [version, exportedAt, notes]
+      properties:
+        version:
+          type: string
+          example: '1.0'
+        exportedAt:
+          type: string
+          format: date-time
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+
+    ImportResult:
+      type: object
+      required: [imported, skipped, errors]
+      properties:
+        imported:
+          type: integer
+          minimum: 0
+        skipped:
+          type: integer
+          minimum: 0
+        errors:
+          type: array
+          items:
+            type: string
+
+    Error:
+      type: object
+      required: [code, message, details]
+      properties:
+        code:
+          type: string
+          example: NOTE_NOT_FOUND
+        message:
+          type: string
+          example: Note was not found
+        details:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          example: []

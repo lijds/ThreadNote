@@ -60,3 +60,25 @@ For future iterations, this matrix can be expanded with:
 - test case IDs;
 - implementation module mapping;
 - acceptance criteria per requirement.
+
+## 6. REST API traceability
+
+The following table links the substantive REST operations to the approved SRS
+requirements and the mock scenarios used for API-GATE validation.
+
+| API operation | REST resource | REQ-ID | Validation scenarios |
+| --- | --- | --- | --- |
+| `GET /notes` | Note collection, search, filter | FR-01, FR-10, FR-11, FR-16 | API-P04–API-P06, API-N07 |
+| `POST /notes` | Note collection | FR-01, FR-02, FR-03, FR-05, FR-06, FR-07 | API-P01, API-N05 |
+| `GET /notes/{noteId}` | Note | FR-01, FR-02 | API-P02, API-N01 |
+| `PATCH /notes/{noteId}` | Note | FR-01, FR-02, FR-03, FR-05, FR-07 | API-P03, API-N02 |
+| `DELETE /notes/{noteId}` | Note | FR-01, FR-18 | API-P13, API-N03, API-N04, API-N11 |
+| `GET /notes/{noteId}/backlinks` | Backlinks | FR-07, FR-12 | API-P07 |
+| `POST /notes/{noteId}/links/resolve` | Internal link resolution | FR-05, FR-06, FR-07 | API-P08, API-P09, API-N06 |
+| `GET /notes/{noteId}/graph` | Ego-network graph | FR-12, FR-13, FR-14 | API-P10, API-N08 |
+| `GET /backup/export` | Backup document | FR-17 | API-P11 |
+| `POST /backup/import` | Backup document | FR-17 | API-P12, API-N09, API-N10 |
+
+UI-only requirements FR-04, FR-08, FR-09, and FR-15 are intentionally not
+mapped to REST operations because they describe Markdown presentation,
+editor interaction, autocomplete, and gesture behavior.

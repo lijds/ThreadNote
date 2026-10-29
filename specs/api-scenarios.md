@@ -55,7 +55,7 @@ The scenarios should be executed against a mock generated from
 `specs/openapi.yaml`, for example with Stoplight Prism:
 
 ```text
-prism mock specs/openapi.yaml
+npx.cmd --yes @stoplight/prism-cli@latest mock specs/openapi.yaml --host 127.0.0.1 --port 4010 --dynamic
 ```
 
 The mock is used to validate request/response shapes and documented status

@@ -2,7 +2,7 @@
 
 ## Gate decision
 
-**Status: PASS**
+**Status: PASS WITH DOCUMENTED MOCK LIMITATION**
 
 The REST API contract is ready for the next implementation stage. This gate
 approves the design and mock only; it does not approve a production server
@@ -12,17 +12,16 @@ implementation.
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| OpenAPI document exists | PASS | `specs/openapi.yaml` |
-| OpenAPI version is supported | PASS | OpenAPI `3.0.3` |
-| Automatic OpenAPI validation | PASS | Redocly CLI: `specs/openapi.yaml validated`; exit code `0` |
-| Mock API starts from the contract | PASS | Prism started on `http://127.0.0.1:4010` |
-| Mock routes are registered | PASS | Notes, backlinks, graph, and backup routes listed by Prism |
-| Positive scenarios are defined | PASS | API-P01 through API-P13 in `specs/api-scenarios.md` |
-| Negative scenarios are defined | PASS | API-N01 through API-N11 in `specs/api-scenarios.md` |
-| Shared error model exists | PASS | `components.schemas.Error` |
-| Requirement links exist | PASS | `x-req-ids` on each substantive operation |
-| New API behavior is documented | PASS | `specs/api-addendum.md` |
-| Production implementation is excluded | PASS | OpenAPI description and addendum scope |
+| 1. Every substantive operation has a REQ-ID link | PASS | `x-req-ids` is present on every operation in `specs/openapi.yaml`; cross-check in `specs/traceability-matrix.md` |
+| 2. Resources and terminology match the domain glossary | PASS | `Note`, `Backlink`, `Graph`, and `BackupDocument` match the ThreadNote domain terms |
+| 3. URI and HTTP methods are consistent | PASS | Collection/resource conventions are used consistently under `/notes` and `/backup` |
+| 4. Request and response schemas are defined | PASS | Operation bodies and responses reference `components.schemas` |
+| 5. HTTP codes and one error model are defined | PASS | Documented `2xx`, `4xx` responses use `components.schemas.Error` where applicable |
+| 6. Positive and negative scenarios are defined | PASS | API-P01–API-P13 and API-N01–API-N11 in `specs/api-scenarios.md` |
+| 7. The API does not expose implementation details | PASS | Contract exposes domain resources, not storage tables or internal services |
+| 8. OpenAPI automatic validation | PASS | Redocly CLI: validated, exit code `0` |
+| 9. Mock starts from the approved specification | PASS | Prism started on `http://127.0.0.1:4010` and registered all paths |
+| 10. Main scenarios reproduce through mock | PARTIAL | Verified: `GET /notes` → `200`, backlinks → `200`, graph → `200`, unknown note → `404`, invalid graph depth → `400`; POST body scenario was not counted because Prism did not complete the request in this environment |
 
 ## Validation commands
 
@@ -38,12 +37,25 @@ The Prism mock exposes the paths from the OpenAPI `paths` section directly,
 for example `http://127.0.0.1:4010/notes`. Use
 `Prefer: code=<status>` to select a documented negative response when needed.
 
-## Known non-blocking warning
+## Mock verification record
 
-Redocly reports one warning that the academic-project license entry has no URL.
-It does not invalidate the OpenAPI document and does not block this gate.
+The following requests were executed against the running Prism mock:
+
+| Request | Expected | Observed |
+| --- | --- | --- |
+| `GET /notes` | `200` | `200` |
+| `GET /notes/test/backlinks` | `200` | `200` |
+| `GET /notes/test/graph` | `200` | `200` |
+| `GET /notes/unknown` with `Prefer: code=404` | `404` | `404` |
+| `GET /notes/test/graph?depth=2` with `Prefer: code=400` | `400` | `400` |
+
+Prism is a schema/status-code mock and does not implement persistence or
+business logic. Therefore, response payload semantics such as actual search
+matching and note creation persistence remain implementation-stage checks.
 
 ## Follow-up
 
 Implementing the approved operations and integrating them with the mobile
-client is deferred to the next laboratory work.
+client is deferred to the next laboratory work. Before treating item 10 as a
+full PASS, rerun the POST and PATCH scenarios in a Node/Prism environment
+where request bodies complete successfully.

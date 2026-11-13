@@ -14,7 +14,11 @@ import type { Note } from './src/note-service';
 import { createExpoMobileStorage } from './src/mobile/expo-storage';
 import { createMobileNotesApp, type MobileNotesApp } from './src/mobile/notes-app';
 
-const NativeMarkdown = MarkdownModule as unknown as React.ComponentType<{ children: string }>;
+const NativeMarkdown = (
+  MarkdownModule as unknown as {
+    default: React.ComponentType<{ children: string }>;
+  }
+).default;
 
 function useNotesApp(): MobileNotesApp {
   const [app] = useState(() => createMobileNotesApp(createExpoMobileStorage()));

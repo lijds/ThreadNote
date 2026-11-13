@@ -25,3 +25,9 @@
 - Expo initially failed because Metro resolved `.js` import specifiers literally while the mobile sources are TypeScript.
 - Changed the Expo/mobile graph to extensionless imports and aligned TypeScript with bundler module resolution.
 - `npx.cmd expo export --platform web --clear --output-dir dist` passed and bundled 425 modules.
+
+## Runtime Render Fix
+
+- Expo Go reported an invalid React element because the Markdown package namespace was rendered instead of its default component export.
+- Bound `MarkdownModule.default` explicitly in `App.tsx`.
+- Expo typecheck and Metro export passed again after the fix.

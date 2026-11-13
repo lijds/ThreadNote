@@ -18,6 +18,7 @@ export interface OfflineNoteStore {
   update(noteId: string, input: UpdateNoteInput): Note;
   delete(noteId: string): boolean;
   addBacklink(noteId: string, backlink: Backlink): Note;
+  importNotes(notesToImport: Note[]): number;
 }
 
 export interface PersistentNoteStore {
@@ -28,6 +29,7 @@ export interface PersistentNoteStore {
   update(noteId: string, input: UpdateNoteInput): Promise<Note>;
   delete(noteId: string): Promise<boolean>;
   addBacklink(noteId: string, backlink: Backlink): Promise<Note>;
+  importNotes(notesToImport: Note[]): Promise<number>;
 }
 
 function copyNote(note: Note): Note {
@@ -80,6 +82,13 @@ export function createOfflineNoteStore(): OfflineNoteStore {
       const updatedNote = addBacklinkToNote(note, backlink);
       notes.set(noteId, updatedNote);
       return copyNote(updatedNote);
+    },
+    importNotes(notesToImport) {
+      for (const note of notesToImport) {
+        notes.set(note.id, copyNote(note));
+      }
+
+      return notesToImport.length;
     },
     list() {
       return [...notes.values()].map(copyNote);
@@ -149,6 +158,14 @@ export async function createPersistentNoteStore(storagePath: string): Promise<Pe
       notes.set(noteId, updatedNote);
       await persistNotes(storagePath, notes);
       return copyNote(updatedNote);
+    },
+    async importNotes(notesToImport) {
+      for (const note of notesToImport) {
+        notes.set(note.id, copyNote(note));
+      }
+
+      await persistNotes(storagePath, notes);
+      return notesToImport.length;
     },
     async list() {
       return [...notes.values()].map(copyNote);

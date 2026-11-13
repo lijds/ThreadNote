@@ -47,6 +47,18 @@ export interface GraphResponse {
   edges: GraphEdge[];
 }
 
+export interface BackupDocument {
+  version: string;
+  exportedAt: string;
+  notes: Note[];
+}
+
+export interface ImportResult {
+  imported: number;
+  skipped: number;
+  errors: string[];
+}
+
 export interface ResolveLinkResponse {
   created: boolean;
   note: Note;
@@ -64,11 +76,65 @@ export interface ControllerResponse<T> {
 
 export class NoteControllerError extends Error {
   constructor(
-    public readonly status: 400 | 404 | 409,
+    public readonly status: 400 | 404 | 409 | 422,
     message: string,
   ) {
     super(message);
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isValidTimestamp(value: unknown): value is string {
+  return typeof value === 'string' && !Number.isNaN(Date.parse(value));
+}
+
+function isBacklink(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    (value.linkText === undefined || typeof value.linkText === 'string')
+  );
+}
+
+function isNote(value: unknown): value is Note {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.id === 'string' &&
+    value.id.length > 0 &&
+    typeof value.title === 'string' &&
+    value.title.length > 0 &&
+    typeof value.body === 'string' &&
+    Array.isArray(value.tags) &&
+    value.tags.every((tag) => typeof tag === 'string') &&
+    isValidTimestamp(value.createdAt) &&
+    isValidTimestamp(value.updatedAt) &&
+    Array.isArray(value.backlinks) &&
+    value.backlinks.every(isBacklink)
+  );
+}
+
+function isBackupDocument(value: unknown): value is BackupDocument {
+  if (!isRecord(value) || typeof value.version !== 'string' || value.version === '') {
+    return false;
+  }
+  if (
+    typeof value.exportedAt !== 'string' ||
+    Number.isNaN(Date.parse(value.exportedAt)) ||
+    !Array.isArray(value.notes) ||
+    !value.notes.every(isNote)
+  ) {
+    return false;
+  }
+
+  const ids = value.notes.map((note) => note.id);
+  return new Set(ids).size === ids.length;
 }
 
 function getPagination(query: ListNotesQuery): { page: number; limit: number } {
@@ -198,6 +264,29 @@ export function createNotesController(store: PersistentNoteStore) {
   return {
     create(input: CreateNoteInput): Promise<Note> {
       return store.create(input);
+    },
+    async exportBackup(): Promise<ControllerResponse<BackupDocument>> {
+      return {
+        status: 200,
+        body: {
+          version: '1.0',
+          exportedAt: new Date().toISOString(),
+          notes: await store.list(),
+        },
+      };
+    },
+    async importBackup(document: unknown): Promise<ControllerResponse<ImportResult>> {
+      if (!isBackupDocument(document)) {
+        throw new NoteControllerError(422, 'backup document is invalid');
+      }
+
+      const existingIds = new Set((await store.list()).map((note) => note.id));
+      if (document.notes.some((note) => existingIds.has(note.id))) {
+        throw new NoteControllerError(409, 'backup contains conflicting note IDs');
+      }
+
+      const imported = await store.importNotes(document.notes);
+      return { status: 200, body: { imported, skipped: 0, errors: [] } };
     },
     async resolveLink(
       sourceNoteId: string,

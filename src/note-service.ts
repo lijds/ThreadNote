@@ -8,6 +8,12 @@ export interface CreateNoteInput {
   tags?: string[];
 }
 
+export interface Backlink {
+  id: string;
+  title: string;
+  linkText?: string;
+}
+
 export interface Note {
   id: string;
   title: string;
@@ -15,7 +21,7 @@ export interface Note {
   tags: string[];
   createdAt: string;
   updatedAt: string;
-  backlinks: [];
+  backlinks: Backlink[];
 }
 
 function normalizeTitle(title: string | undefined): string {

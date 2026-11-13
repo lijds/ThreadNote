@@ -14,3 +14,8 @@
 
 - Added the minimal `createNote` service for the `POST /notes` contract.
 - `npm.cmd test` passed: 2 tests, 2 passed, 0 failed.
+
+## Refactor
+
+- Generalized the `backlinks` type to the OpenAPI `Backlink` shape without changing the initial empty collection returned by creation.
+- Refactor validation: `npm.cmd test` passed and `npm.cmd run typecheck` passed.

@@ -321,7 +321,7 @@ export function createNotesController(store: PersistentNoteStore) {
       const sort = validateSort(query.sort);
       const normalizedQuery = query.query?.trim().toLocaleLowerCase() ?? '';
       const notes = filterAndSortNotes(
-        await store.list(),
+        await store.search(normalizedQuery, query.tag),
         normalizedQuery,
         query.tag,
         sort,

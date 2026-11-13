@@ -5,6 +5,7 @@ import type {
   UpdateNoteInput,
 } from './note-service.js';
 import type { PersistentNoteStore } from './note-store.js';
+import { parseInternalLinks } from './markdown-editor.js';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -28,6 +29,22 @@ export interface NoteListResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+export interface GraphNode {
+  id: string;
+  title: string;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+}
+
+export interface GraphResponse {
+  center: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
 }
 
 export interface ResolveLinkResponse {
@@ -135,6 +152,48 @@ function validateDeleteConfirmation(confirm: boolean | undefined): void {
   }
 }
 
+function addGraphConnection(
+  nodes: Map<string, GraphNode>,
+  edges: GraphEdge[],
+  edgeKeys: Set<string>,
+  note: Note,
+  source: string,
+  target: string,
+): void {
+  nodes.set(note.id, { id: note.id, title: note.title });
+  const edgeKey = `${source}->${target}`;
+  if (!edgeKeys.has(edgeKey)) {
+    edgeKeys.add(edgeKey);
+    edges.push({ source, target });
+  }
+}
+
+function buildGraph(center: Note, notes: Note[]): GraphResponse {
+  const notesById = new Map(notes.map((note) => [note.id, note]));
+  const notesByTitle = new Map(notes.map((note) => [note.title, note]));
+  const nodes = new Map<string, GraphNode>([
+    [center.id, { id: center.id, title: center.title }],
+  ]);
+  const edges: GraphEdge[] = [];
+  const edgeKeys = new Set<string>();
+
+  for (const link of parseInternalLinks(center.body)) {
+    const target = notesByTitle.get(link.title);
+    if (target !== undefined) {
+      addGraphConnection(nodes, edges, edgeKeys, target, center.id, target.id);
+    }
+  }
+
+  for (const backlink of center.backlinks) {
+    const source = notesById.get(backlink.id);
+    if (source !== undefined) {
+      addGraphConnection(nodes, edges, edgeKeys, source, source.id, center.id);
+    }
+  }
+
+  return { center: center.id, nodes: [...nodes.values()], edges };
+}
+
 export function createNotesController(store: PersistentNoteStore) {
   return {
     create(input: CreateNoteInput): Promise<Note> {
@@ -198,6 +257,17 @@ export function createNotesController(store: PersistentNoteStore) {
     ): Promise<ControllerResponse<BacklinkListResponse>> {
       const note = await getNoteOrThrow(store, noteId);
       return { status: 200, body: { noteId, items: note.backlinks } };
+    },
+    async getGraph(
+      noteId: string,
+      depth = 1,
+    ): Promise<ControllerResponse<GraphResponse>> {
+      if (depth !== 1) {
+        throw new NoteControllerError(400, 'graph depth must be 1');
+      }
+
+      const center = await getNoteOrThrow(store, noteId);
+      return { status: 200, body: buildGraph(center, await store.list()) };
     },
     async get(noteId: string): Promise<ControllerResponse<Note>> {
       return { status: 200, body: await getNoteOrThrow(store, noteId) };

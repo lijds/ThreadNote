@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 import { createNote, updateNote } from '../src/note-service.js';
-import { createOfflineNoteStore } from '../src/note-store.js';
+import {
+  createOfflineNoteStore,
+  createPersistentNoteStore,
+} from '../src/note-store.js';
 
 test('creates a note with contract metadata and a generated title', () => {
   const note = createNote({ body: '# Project plan', tags: ['work'] });
@@ -47,5 +53,24 @@ test('creates, reads, and updates notes without network access', () => {
     assert.equal(store.get(createdNote.id)?.body, 'Updated locally');
   } finally {
     globalThis.fetch = originalFetch;
+  }
+});
+
+test('persists notes in the application sandbox across store instances', async () => {
+  const sandbox = await mkdtemp(path.join(os.tmpdir(), 'threadnote-'));
+  const storagePath = path.join(sandbox, 'notes.json');
+
+  try {
+    const firstStore = await createPersistentNoteStore(storagePath);
+    const createdNote = await firstStore.create({ body: 'Persisted content' });
+    const updatedNote = await firstStore.update(createdNote.id, {
+      body: 'Updated persisted content',
+    });
+
+    const reopenedStore = await createPersistentNoteStore(storagePath);
+
+    assert.deepEqual(await reopenedStore.get(createdNote.id), updatedNote);
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
   }
 });

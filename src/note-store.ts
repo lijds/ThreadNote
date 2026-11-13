@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   createNote,
+  createPlaceholderNote,
   type CreateNoteInput,
   type Note,
   type UpdateNoteInput,
@@ -10,6 +11,7 @@ import {
 
 export interface OfflineNoteStore {
   create(input: CreateNoteInput): Note;
+  createPlaceholder(title: string): Note;
   get(noteId: string): Note | undefined;
   list(): Note[];
   update(noteId: string, input: UpdateNoteInput): Note;
@@ -18,6 +20,7 @@ export interface OfflineNoteStore {
 
 export interface PersistentNoteStore {
   create(input: CreateNoteInput): Promise<Note>;
+  createPlaceholder(title: string): Promise<Note>;
   get(noteId: string): Promise<Note | undefined>;
   list(): Promise<Note[]>;
   update(noteId: string, input: UpdateNoteInput): Promise<Note>;
@@ -47,6 +50,11 @@ export function createOfflineNoteStore(): OfflineNoteStore {
   return {
     create(input) {
       const note = createNote(input);
+      notes.set(note.id, note);
+      return copyNote(note);
+    },
+    createPlaceholder(title) {
+      const note = createPlaceholderNote(title);
       notes.set(note.id, note);
       return copyNote(note);
     },
@@ -102,6 +110,12 @@ export async function createPersistentNoteStore(storagePath: string): Promise<Pe
   return {
     async create(input) {
       const note = createNote(input);
+      notes.set(note.id, note);
+      await persistNotes(storagePath, notes);
+      return copyNote(note);
+    },
+    async createPlaceholder(title) {
+      const note = createPlaceholderNote(title);
       notes.set(note.id, note);
       await persistNotes(storagePath, notes);
       return copyNote(note);

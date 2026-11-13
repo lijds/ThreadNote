@@ -9,7 +9,11 @@ import {
   createPersistentNoteStore,
 } from '../src/note-store.js';
 import { createNotesController } from '../src/note-controller.js';
-import { createMarkdownEditor, renderMarkdown } from '../src/markdown-editor.js';
+import {
+  createMarkdownEditor,
+  parseInternalLinks,
+  renderMarkdown,
+} from '../src/markdown-editor.js';
 
 test('creates a note with contract metadata and a generated title', () => {
   const note = createNote({ body: '# Project plan', tags: ['work'] });
@@ -180,4 +184,43 @@ test('switches editor and preview modes without losing Markdown input', () => {
   const editMode = edited.setMode('edit');
   assert.equal(editMode.mode, 'edit');
   assert.equal(editMode.markdown, '## Updated draft');
+});
+
+test('recognizes internal links in Markdown', () => {
+  const links = parseInternalLinks('Read [[Research notes]] and [[Todo]].');
+
+  assert.deepEqual(links.map((link) => link.title), ['Research notes', 'Todo']);
+});
+
+test('renders internal links as clickable preview links', () => {
+  const rendered = renderMarkdown('Open [[Research notes]]');
+
+  assert.match(
+    rendered,
+    /<a href="threadnote:\/\/note\/Research%20notes">Research notes<\/a>/,
+  );
+});
+
+test('resolves an existing link or creates a placeholder draft', async () => {
+  const sandbox = await mkdtemp(path.join(os.tmpdir(), 'threadnote-'));
+  const storagePath = path.join(sandbox, 'notes.json');
+
+  try {
+    const store = await createPersistentNoteStore(storagePath);
+    const controller = createNotesController(store);
+    const sourceNote = await controller.create({ body: 'See [[Missing note]]' });
+
+    const created = await controller.resolveLink(sourceNote.id, 'Missing note');
+    assert.equal(created.status, 201);
+    assert.equal(created.body.created, true);
+    assert.equal(created.body.note.title, 'Missing note');
+    assert.equal(created.body.note.body, '');
+
+    const resolved = await controller.resolveLink(sourceNote.id, 'Missing note');
+    assert.equal(resolved.status, 200);
+    assert.equal(resolved.body.created, false);
+    assert.equal(resolved.body.note.id, created.body.note.id);
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
 });

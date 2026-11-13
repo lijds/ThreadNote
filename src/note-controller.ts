@@ -26,6 +26,11 @@ export interface NoteListResponse {
   limit: number;
 }
 
+export interface ResolveLinkResponse {
+  created: boolean;
+  note: Note;
+}
+
 export interface ControllerResponse<T> {
   status: number;
   body: T;
@@ -72,6 +77,26 @@ export function createNotesController(store: PersistentNoteStore) {
   return {
     create(input: CreateNoteInput): Promise<Note> {
       return store.create(input);
+    },
+    async resolveLink(
+      sourceNoteId: string,
+      targetTitle: string,
+    ): Promise<ControllerResponse<ResolveLinkResponse>> {
+      await getNoteOrThrow(store, sourceNoteId);
+      const normalizedTitle = targetTitle.trim();
+      if (!normalizedTitle) {
+        throw new NoteControllerError(400, 'target title is required');
+      }
+
+      const existingNote = (await store.list()).find(
+        (note) => note.title === normalizedTitle,
+      );
+      if (existingNote !== undefined) {
+        return { status: 200, body: { created: false, note: existingNote } };
+      }
+
+      const placeholder = await store.createPlaceholder(normalizedTitle);
+      return { status: 201, body: { created: true, note: placeholder } };
     },
     async list(query: ListNotesQuery = {}): Promise<ControllerResponse<NoteListResponse>> {
       const { page, limit } = getPagination(query);

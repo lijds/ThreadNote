@@ -42,22 +42,34 @@ function createTimestamp(): string {
   return new Date().toISOString();
 }
 
+function createNoteRecord(title: string, body: string, tags: string[]): Note {
+  const timestamp = createTimestamp();
+
+  return {
+    id: `note-${randomUUID()}`,
+    title,
+    body,
+    tags,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    backlinks: [],
+  };
+}
+
 export function createNote(input: CreateNoteInput): Note {
   if (!input.body) {
     throw new Error('body is required');
   }
 
-  const timestamp = createTimestamp();
+  return createNoteRecord(
+    normalizeTitle(input.title),
+    input.body,
+    normalizeTags(input.tags),
+  );
+}
 
-  return {
-    id: `note-${randomUUID()}`,
-    title: normalizeTitle(input.title),
-    body: input.body,
-    tags: normalizeTags(input.tags),
-    createdAt: timestamp,
-    updatedAt: timestamp,
-    backlinks: [],
-  };
+export function createPlaceholderNote(title: string): Note {
+  return createNoteRecord(normalizeTitle(title), '', []);
 }
 
 export function updateNote(note: Note, input: UpdateNoteInput): Note {

@@ -22,6 +22,7 @@ adapter are typechecked as a separate mobile target.
 | Depth-one knowledge graph | PASS | `tests/graph.test.ts`, `tests/mobile-integration.test.ts` |
 | Backup export/import integrity | PASS | `tests/backup.test.ts` |
 | React Native / Expo entrypoint | PASS | `App.tsx`, `app.json`, `src/mobile/expo-storage.ts` |
+| Connected mobile UI workflows | PASS | `App.tsx` exposes title/tags editing, delete confirmation, link resolution, autocomplete, backlinks, graph, and backup actions. |
 
 ## Verification Commands
 
@@ -39,6 +40,7 @@ Observed result:
 - Node/domain strict TypeScript check passed.
 - Expo/React Native strict TypeScript check passed.
 - Expo web export passed: Metro bundled 425 modules into `dist`.
+- Final UI export passed: Metro bundled 423 modules into `dist` after the complete workflow integration.
 - The 500-note performance benchmark passed for search, filtering, pagination,
   and graph operations.
 
@@ -53,6 +55,6 @@ Observed result:
 ## Release Boundary
 
 A physical Android/iOS smoke test requires an emulator or device, which is not
-available in this environment. The automated gate therefore covers the Expo
-bundle's source/type integration and the complete mobile app model, while device
-launch validation remains an environment-specific follow-up.
+available in this environment. The automated gate covers the Expo bundle,
+strict types, full service tests, and connected mobile workflows; device launch
+validation remains an environment-specific follow-up.

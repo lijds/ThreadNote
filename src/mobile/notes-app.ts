@@ -10,6 +10,8 @@ import { createMobileStore, type MobileStore } from './memory-store';
 export interface MobileStorage {
   read(): Promise<string | null>;
   write(content: string): Promise<void>;
+  readBackup?(): Promise<string | null>;
+  writeBackup?(content: string): Promise<void>;
 }
 
 export interface MobileGraph {
@@ -24,9 +26,13 @@ export interface MobileNotesApp {
   listNotes(): Promise<Note[]>;
   openNote(noteId: string): Promise<Note | undefined>;
   updateNote(noteId: string, input: UpdateNoteInput): Promise<Note>;
+  deleteNote(noteId: string): Promise<void>;
+  getBacklinks(noteId: string): Promise<Backlink[]>;
   resolveLink(sourceNoteId: string, targetTitle: string): Promise<Note>;
   search(query: string, tag?: string): Promise<Note[]>;
   getGraph(noteId: string): Promise<MobileGraph>;
+  exportBackup(): Promise<string>;
+  importBackup(serialized?: string): Promise<void>;
 }
 
 function copyNotes(notes: Note[]): string {
@@ -113,6 +119,21 @@ export function createMobileNotesApp(storage: MobileStorage): MobileNotesApp {
       await persist();
       return note;
     },
+    async deleteNote(noteId) {
+      ensureInitialized();
+      if (!store.delete(noteId)) {
+        throw new Error(`note not found: ${noteId}`);
+      }
+      await persist();
+    },
+    async getBacklinks(noteId) {
+      ensureInitialized();
+      const note = store.get(noteId);
+      if (note === undefined) {
+        throw new Error(`note not found: ${noteId}`);
+      }
+      return note.backlinks;
+    },
     async resolveLink(sourceNoteId, targetTitle) {
       ensureInitialized();
       const source = store.get(sourceNoteId);
@@ -145,6 +166,34 @@ export function createMobileNotesApp(storage: MobileStorage): MobileNotesApp {
         throw new Error(`note not found: ${noteId}`);
       }
       return buildGraph(center, store.list());
+    },
+    async exportBackup() {
+      ensureInitialized();
+      const serialized = JSON.stringify({
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        notes: store.list(),
+      }, null, 2);
+      if (storage.writeBackup !== undefined) {
+        await storage.writeBackup(serialized);
+      }
+      return serialized;
+    },
+    async importBackup(serialized) {
+      ensureInitialized();
+      let source: string | null | undefined = serialized;
+      if (source === undefined && storage.readBackup !== undefined) {
+        source = await storage.readBackup();
+      }
+      if (source === null || source === undefined) {
+        throw new Error('No backup found');
+      }
+      const backup = JSON.parse(source) as { version?: string; notes?: Note[] };
+      if (backup.version !== '1.0' || !Array.isArray(backup.notes)) {
+        throw new Error('backup document is invalid');
+      }
+      store.importNotes(backup.notes);
+      await persist();
     },
   };
 }

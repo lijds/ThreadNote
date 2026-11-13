@@ -31,3 +31,9 @@
 - Expo Go reported an invalid React element because the Markdown package namespace was rendered instead of its default component export.
 - Bound `MarkdownModule.default` explicitly in `App.tsx`.
 - Expo typecheck and Metro export passed again after the fix.
+
+## Full UI Completion
+
+- Connected title and tags editing, delete confirmation, backlinks, graph nodes/edges, link click resolution, autocomplete suggestions, and backup export/import to `App.tsx`.
+- Extended the mobile integration test for title/tags persistence, backlinks, backup round-trip, and delete.
+- Final UI validation: `23` tests passed, both strict typechecks passed, and Expo web export bundled 423 modules.

@@ -15,6 +15,7 @@ export interface MobileStore {
   list(): Note[];
   search(query?: string, tag?: string): Note[];
   update(noteId: string, input: UpdateNoteInput): Note;
+  delete(noteId: string): boolean;
   addBacklink(noteId: string, backlink: Backlink): Note;
   importNotes(notes: Note[]): number;
 }
@@ -72,6 +73,9 @@ export function createMobileStore(): MobileStore {
       const updatedNote = updateNote(note, input);
       notes.set(noteId, updatedNote);
       return copyNote(updatedNote);
+    },
+    delete(noteId) {
+      return notes.delete(noteId);
     },
     addBacklink(noteId, backlink) {
       const note = requireNote(notes, noteId);

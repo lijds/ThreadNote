@@ -129,6 +129,26 @@ test('supports the complete note lifecycle and paginated list', async () => {
   }
 });
 
+test('requires an explicit boolean true before deleting a note', async () => {
+  const sandbox = await mkdtemp(path.join(os.tmpdir(), 'threadnote-'));
+  const storagePath = path.join(sandbox, 'notes.json');
+
+  try {
+    const store = await createPersistentNoteStore(storagePath);
+    const controller = createNotesController(store);
+    const note = await controller.create({ body: 'Protected note' });
+
+    await assert.rejects(
+      controller.delete(note.id, 'true' as unknown as boolean),
+      (error: unknown) => (error as { status: number }).status === 400,
+    );
+    assert.equal((await controller.get(note.id)).status, 200);
+    assert.equal((await controller.delete(note.id, true)).status, 204);
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
+});
+
 test('renders the required basic Markdown syntax', () => {
   const markdown = '# Heading\n\n- first\n- second\n\n**bold** and *italic*\n\n> quote\n\nParagraph';
 

@@ -59,6 +59,15 @@ async function getNoteOrThrow(store: PersistentNoteStore, noteId: string): Promi
   return note;
 }
 
+function validateDeleteConfirmation(confirm: boolean | undefined): void {
+  if (typeof confirm !== 'boolean') {
+    throw new NoteControllerError(400, 'delete confirmation is required');
+  }
+  if (!confirm) {
+    throw new NoteControllerError(409, 'delete confirmation must be true');
+  }
+}
+
 export function createNotesController(store: PersistentNoteStore) {
   return {
     create(input: CreateNoteInput): Promise<Note> {
@@ -95,12 +104,7 @@ export function createNotesController(store: PersistentNoteStore) {
       return { status: 200, body: await store.update(noteId, input) };
     },
     async delete(noteId: string, confirm?: boolean): Promise<{ status: 204 }> {
-      if (confirm === undefined) {
-        throw new NoteControllerError(400, 'delete confirmation is required');
-      }
-      if (!confirm) {
-        throw new NoteControllerError(409, 'delete confirmation must be true');
-      }
+      validateDeleteConfirmation(confirm);
       if (!(await store.delete(noteId))) {
         throw new NoteControllerError(404, 'note was not found');
       }

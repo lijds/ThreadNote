@@ -3,6 +3,7 @@ import path from 'node:path';
 import {
   createNote,
   createPlaceholderNote,
+  type Backlink,
   type CreateNoteInput,
   type Note,
   type UpdateNoteInput,
@@ -16,6 +17,7 @@ export interface OfflineNoteStore {
   list(): Note[];
   update(noteId: string, input: UpdateNoteInput): Note;
   delete(noteId: string): boolean;
+  addBacklink(noteId: string, backlink: Backlink): Note;
 }
 
 export interface PersistentNoteStore {
@@ -25,6 +27,7 @@ export interface PersistentNoteStore {
   list(): Promise<Note[]>;
   update(noteId: string, input: UpdateNoteInput): Promise<Note>;
   delete(noteId: string): Promise<boolean>;
+  addBacklink(noteId: string, backlink: Backlink): Promise<Note>;
 }
 
 function copyNote(note: Note): Note {
@@ -44,6 +47,16 @@ function requireNote(notes: Map<string, Note>, noteId: string): Note {
   return note;
 }
 
+function addBacklinkToNote(note: Note, backlink: Backlink): Note {
+  const backlinks = note.backlinks.some(
+    (existing) => existing.id === backlink.id && existing.linkText === backlink.linkText,
+  )
+    ? note.backlinks
+    : [...note.backlinks, { ...backlink }];
+
+  return { ...note, backlinks };
+}
+
 export function createOfflineNoteStore(): OfflineNoteStore {
   const notes = new Map<string, Note>();
 
@@ -61,6 +74,12 @@ export function createOfflineNoteStore(): OfflineNoteStore {
     get(noteId) {
       const note = notes.get(noteId);
       return note === undefined ? undefined : copyNote(note);
+    },
+    addBacklink(noteId, backlink) {
+      const note = requireNote(notes, noteId);
+      const updatedNote = addBacklinkToNote(note, backlink);
+      notes.set(noteId, updatedNote);
+      return copyNote(updatedNote);
     },
     list() {
       return [...notes.values()].map(copyNote);
@@ -123,6 +142,13 @@ export async function createPersistentNoteStore(storagePath: string): Promise<Pe
     async get(noteId) {
       const note = notes.get(noteId);
       return note === undefined ? undefined : copyNote(note);
+    },
+    async addBacklink(noteId, backlink) {
+      const note = requireNote(notes, noteId);
+      const updatedNote = addBacklinkToNote(note, backlink);
+      notes.set(noteId, updatedNote);
+      await persistNotes(storagePath, notes);
+      return copyNote(updatedNote);
     },
     async list() {
       return [...notes.values()].map(copyNote);

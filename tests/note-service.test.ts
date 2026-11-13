@@ -224,3 +224,36 @@ test('resolves an existing link or creates a placeholder draft', async () => {
     await rm(sandbox, { recursive: true, force: true });
   }
 });
+
+test('generates and exposes backlinks for notes that reference a target', async () => {
+  const sandbox = await mkdtemp(path.join(os.tmpdir(), 'threadnote-'));
+  const storagePath = path.join(sandbox, 'notes.json');
+
+  try {
+    const store = await createPersistentNoteStore(storagePath);
+    const controller = createNotesController(store);
+    const targetNote = await controller.create({
+      title: 'Target note',
+      body: 'Target content',
+    });
+    const sourceNote = await controller.create({
+      title: 'Source note',
+      body: 'See [[Target note]] for details.',
+    });
+
+    await controller.resolveLink(sourceNote.id, 'Target note');
+
+    const backlinks = await controller.getBacklinks(targetNote.id);
+    assert.equal(backlinks.status, 200);
+    assert.equal(backlinks.body.noteId, targetNote.id);
+    assert.deepEqual(backlinks.body.items, [
+      {
+        id: sourceNote.id,
+        title: sourceNote.title,
+        linkText: '[[Target note]]',
+      },
+    ]);
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
+});

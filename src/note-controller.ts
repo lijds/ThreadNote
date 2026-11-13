@@ -1,4 +1,5 @@
 import type {
+  Backlink,
   CreateNoteInput,
   Note,
   UpdateNoteInput,
@@ -29,6 +30,11 @@ export interface NoteListResponse {
 export interface ResolveLinkResponse {
   created: boolean;
   note: Note;
+}
+
+export interface BacklinkListResponse {
+  noteId: string;
+  items: Backlink[];
 }
 
 export interface ControllerResponse<T> {
@@ -82,21 +88,29 @@ export function createNotesController(store: PersistentNoteStore) {
       sourceNoteId: string,
       targetTitle: string,
     ): Promise<ControllerResponse<ResolveLinkResponse>> {
-      await getNoteOrThrow(store, sourceNoteId);
+      const sourceNote = await getNoteOrThrow(store, sourceNoteId);
       const normalizedTitle = targetTitle.trim();
       if (!normalizedTitle) {
         throw new NoteControllerError(400, 'target title is required');
       }
 
+      const backlink: Backlink = {
+        id: sourceNote.id,
+        title: sourceNote.title,
+        linkText: `[[${normalizedTitle}]]`,
+      };
+
       const existingNote = (await store.list()).find(
         (note) => note.title === normalizedTitle,
       );
       if (existingNote !== undefined) {
-        return { status: 200, body: { created: false, note: existingNote } };
+        const linkedNote = await store.addBacklink(existingNote.id, backlink);
+        return { status: 200, body: { created: false, note: linkedNote } };
       }
 
       const placeholder = await store.createPlaceholder(normalizedTitle);
-      return { status: 201, body: { created: true, note: placeholder } };
+      const linkedPlaceholder = await store.addBacklink(placeholder.id, backlink);
+      return { status: 201, body: { created: true, note: linkedPlaceholder } };
     },
     async list(query: ListNotesQuery = {}): Promise<ControllerResponse<NoteListResponse>> {
       const { page, limit } = getPagination(query);
@@ -117,6 +131,12 @@ export function createNotesController(store: PersistentNoteStore) {
           limit,
         },
       };
+    },
+    async getBacklinks(
+      noteId: string,
+    ): Promise<ControllerResponse<BacklinkListResponse>> {
+      const note = await getNoteOrThrow(store, noteId);
+      return { status: 200, body: { noteId, items: note.backlinks } };
     },
     async get(noteId: string): Promise<ControllerResponse<Note>> {
       return { status: 200, body: await getNoteOrThrow(store, noteId) };

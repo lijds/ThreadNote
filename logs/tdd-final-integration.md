@@ -19,3 +19,9 @@
 - Split Node and Expo TypeScript validation into `tsconfig.json` and `tsconfig.expo.json`.
 - Added native Markdown preview rendering and Expo scripts/configuration.
 - Final validation: `npm.cmd test`, `npm.cmd run typecheck`, and `npm.cmd run typecheck:expo` passed.
+
+## Metro Fix
+
+- Expo initially failed because Metro resolved `.js` import specifiers literally while the mobile sources are TypeScript.
+- Changed the Expo/mobile graph to extensionless imports and aligned TypeScript with bundler module resolution.
+- `npx.cmd expo export --platform web --clear --output-dir dist` passed and bundled 425 modules.

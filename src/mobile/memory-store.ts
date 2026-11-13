@@ -6,7 +6,7 @@ import {
   type Note,
   type UpdateNoteInput,
   updateNote,
-} from '../note-service.js';
+} from '../note-service';
 
 export interface MobileStore {
   create(input: CreateNoteInput): Note;

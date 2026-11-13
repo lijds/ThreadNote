@@ -9,10 +9,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { createMarkdownEditor, type MarkdownEditor } from './src/markdown-editor.js';
-import type { Note } from './src/note-service.js';
-import { createExpoMobileStorage } from './src/mobile/expo-storage.js';
-import { createMobileNotesApp, type MobileNotesApp } from './src/mobile/notes-app.js';
+import { createMarkdownEditor, type MarkdownEditor } from './src/markdown-editor';
+import type { Note } from './src/note-service';
+import { createExpoMobileStorage } from './src/mobile/expo-storage';
+import { createMobileNotesApp, type MobileNotesApp } from './src/mobile/notes-app';
 
 const NativeMarkdown = MarkdownModule as unknown as React.ComponentType<{ children: string }>;
 

@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import type { MobileStorage } from './notes-app.js';
+import type { MobileStorage } from './notes-app';
 
 const NOTES_FILE_NAME = 'threadnote-notes.json';
 

@@ -1,11 +1,11 @@
-import { parseInternalLinks } from '../markdown-editor.js';
+import { parseInternalLinks } from '../markdown-editor';
 import type {
   Backlink,
   CreateNoteInput,
   Note,
   UpdateNoteInput,
-} from '../note-service.js';
-import { createMobileStore, type MobileStore } from './memory-store.js';
+} from '../note-service';
+import { createMobileStore, type MobileStore } from './memory-store';
 
 export interface MobileStorage {
   read(): Promise<string | null>;

@@ -38,6 +38,7 @@ Observed result:
 - `23` tests passed, `0` failed.
 - Node/domain strict TypeScript check passed.
 - Expo/React Native strict TypeScript check passed.
+- Expo web export passed: Metro bundled 425 modules into `dist`.
 - The 500-note performance benchmark passed for search, filtering, pagination,
   and graph operations.
 

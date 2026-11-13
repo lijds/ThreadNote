@@ -11,6 +11,7 @@ import {
 import { createNotesController } from '../src/note-controller.js';
 import {
   createMarkdownEditor,
+  getLinkSuggestions,
   parseInternalLinks,
   renderMarkdown,
 } from '../src/markdown-editor.js';
@@ -256,4 +257,15 @@ test('generates and exposes backlinks for notes that reference a target', async 
   } finally {
     await rm(sandbox, { recursive: true, force: true });
   }
+});
+
+test('suggests note titles for an active internal-link prefix', () => {
+  const suggestions = getLinkSuggestions(
+    'Read [[pro',
+    ['Project plan', 'Progress log', 'Daily notes'],
+  );
+
+  assert.deepEqual(suggestions, ['Project plan', 'Progress log']);
+  assert.deepEqual(getLinkSuggestions('Read [pro', ['Project plan']), []);
+  assert.deepEqual(getLinkSuggestions('Read [[project]]', ['Project plan']), []);
 });

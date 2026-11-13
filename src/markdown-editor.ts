@@ -35,6 +35,33 @@ export function parseInternalLinks(markdown: string): InternalLink[] {
     .filter((link) => link.title.length > 0);
 }
 
+function getActiveLinkPrefix(markdown: string, cursorPosition: number): string | undefined {
+  const textBeforeCursor = markdown.slice(0, cursorPosition);
+  const openingIndex = textBeforeCursor.lastIndexOf('[[');
+  const closingIndex = textBeforeCursor.lastIndexOf(']]');
+  if (openingIndex <= closingIndex) {
+    return undefined;
+  }
+
+  const prefix = textBeforeCursor.slice(openingIndex + 2).trimStart();
+  return prefix.includes('\n') ? undefined : prefix;
+}
+
+export function getLinkSuggestions(
+  markdown: string,
+  noteTitles: string[],
+  cursorPosition = markdown.length,
+): string[] {
+  const prefix = getActiveLinkPrefix(markdown, cursorPosition);
+  if (prefix === undefined) {
+    return [];
+  }
+
+  return noteTitles.filter((title) =>
+    title.toLocaleLowerCase().startsWith(prefix.toLocaleLowerCase()),
+  );
+}
+
 function linkifyInternalLinks(markdown: string): string {
   return markdown.replace(INTERNAL_LINK_PATTERN, (match, rawTitle: string) => {
     const title = normalizeLinkTitle(rawTitle);

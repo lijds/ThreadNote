@@ -12,6 +12,9 @@ const DEFAULT_LIMIT = 20;
 export interface ListNotesQuery {
   page?: number;
   limit?: number;
+  query?: string;
+  tag?: string;
+  sort?: 'relevance' | 'recency';
 }
 
 export interface NoteSummary {
@@ -54,11 +57,64 @@ export class NoteControllerError extends Error {
 function getPagination(query: ListNotesQuery): { page: number; limit: number } {
   const page = query.page ?? DEFAULT_PAGE;
   const limit = query.limit ?? DEFAULT_LIMIT;
-  if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1) {
+  if (
+    !Number.isInteger(page) ||
+    page < 1 ||
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 100
+  ) {
     throw new NoteControllerError(400, 'page and limit must be positive integers');
   }
 
   return { page, limit };
+}
+
+function countOccurrences(value: string, query: string): number {
+  return value.split(query).length - 1;
+}
+
+function relevanceScore(note: Note, query: string): number {
+  const title = note.title.toLocaleLowerCase();
+  const body = note.body.toLocaleLowerCase();
+  return countOccurrences(title, query) * 10 + countOccurrences(body, query);
+}
+
+function validateSort(sort: ListNotesQuery['sort']): 'relevance' | 'recency' {
+  if (sort !== undefined && sort !== 'relevance' && sort !== 'recency') {
+    throw new NoteControllerError(400, 'sort must be relevance or recency');
+  }
+
+  return sort ?? 'relevance';
+}
+
+function matchesQuery(note: Note, query: string): boolean {
+  return (
+    query === '' ||
+    note.title.toLocaleLowerCase().includes(query) ||
+    note.body.toLocaleLowerCase().includes(query)
+  );
+}
+
+function filterAndSortNotes(
+  notes: Note[],
+  query: string,
+  tag: string | undefined,
+  sort: 'relevance' | 'recency',
+): Note[] {
+  return notes
+    .filter((note) => tag === undefined || note.tags.includes(tag))
+    .filter((note) => matchesQuery(note, query))
+    .sort((left, right) => {
+      if (sort === 'relevance' && query !== '') {
+        const scoreDifference = relevanceScore(right, query) - relevanceScore(left, query);
+        if (scoreDifference !== 0) {
+          return scoreDifference;
+        }
+      }
+
+      return right.updatedAt.localeCompare(left.updatedAt);
+    });
 }
 
 async function getNoteOrThrow(store: PersistentNoteStore, noteId: string): Promise<Note> {
@@ -114,8 +170,13 @@ export function createNotesController(store: PersistentNoteStore) {
     },
     async list(query: ListNotesQuery = {}): Promise<ControllerResponse<NoteListResponse>> {
       const { page, limit } = getPagination(query);
-      const notes = (await store.list()).sort((left, right) =>
-        right.updatedAt.localeCompare(left.updatedAt),
+      const sort = validateSort(query.sort);
+      const normalizedQuery = query.query?.trim().toLocaleLowerCase() ?? '';
+      const notes = filterAndSortNotes(
+        await store.list(),
+        normalizedQuery,
+        query.tag,
+        sort,
       );
       const start = (page - 1) * limit;
       return {

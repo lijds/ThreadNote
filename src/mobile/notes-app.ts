@@ -1,0 +1,150 @@
+import { parseInternalLinks } from '../markdown-editor.js';
+import type {
+  Backlink,
+  CreateNoteInput,
+  Note,
+  UpdateNoteInput,
+} from '../note-service.js';
+import { createMobileStore, type MobileStore } from './memory-store.js';
+
+export interface MobileStorage {
+  read(): Promise<string | null>;
+  write(content: string): Promise<void>;
+}
+
+export interface MobileGraph {
+  center: string;
+  nodes: Array<{ id: string; title: string }>;
+  edges: Array<{ source: string; target: string }>;
+}
+
+export interface MobileNotesApp {
+  initialize(): Promise<void>;
+  createNote(input: CreateNoteInput): Promise<Note>;
+  listNotes(): Promise<Note[]>;
+  openNote(noteId: string): Promise<Note | undefined>;
+  updateNote(noteId: string, input: UpdateNoteInput): Promise<Note>;
+  resolveLink(sourceNoteId: string, targetTitle: string): Promise<Note>;
+  search(query: string, tag?: string): Promise<Note[]>;
+  getGraph(noteId: string): Promise<MobileGraph>;
+}
+
+function copyNotes(notes: Note[]): string {
+  return JSON.stringify(notes, null, 2);
+}
+
+function buildGraph(center: Note, notes: Note[]): MobileGraph {
+  const notesById = new Map(notes.map((note) => [note.id, note]));
+  const notesByTitle = new Map(notes.map((note) => [note.title, note]));
+  const nodes = new Map<string, { id: string; title: string }>([
+    [center.id, { id: center.id, title: center.title }],
+  ]);
+  const edges: Array<{ source: string; target: string }> = [];
+  const edgeKeys = new Set<string>();
+
+  const addConnection = (note: Note, source: string, target: string): void => {
+    nodes.set(note.id, { id: note.id, title: note.title });
+    const edgeKey = `${source}->${target}`;
+    if (!edgeKeys.has(edgeKey)) {
+      edgeKeys.add(edgeKey);
+      edges.push({ source, target });
+    }
+  };
+
+  for (const link of parseInternalLinks(center.body)) {
+    const target = notesByTitle.get(link.title);
+    if (target !== undefined) {
+      addConnection(target, center.id, target.id);
+    }
+  }
+  for (const backlink of center.backlinks) {
+    const source = notesById.get(backlink.id);
+    if (source !== undefined) {
+      addConnection(source, source.id, center.id);
+    }
+  }
+
+  return { center: center.id, nodes: [...nodes.values()], edges };
+}
+
+export function createMobileNotesApp(storage: MobileStorage): MobileNotesApp {
+  const store: MobileStore = createMobileStore();
+  let initialized = false;
+
+  function ensureInitialized(): void {
+    if (!initialized) {
+      throw new Error('mobile notes app is not initialized');
+    }
+  }
+
+  async function persist(): Promise<void> {
+    await storage.write(copyNotes(store.list()));
+  }
+
+  return {
+    async initialize() {
+      if (initialized) {
+        return;
+      }
+      const serializedNotes = await storage.read();
+      if (serializedNotes !== null) {
+        const notes = JSON.parse(serializedNotes) as Note[];
+        store.importNotes(notes);
+      }
+      initialized = true;
+    },
+    async createNote(input) {
+      ensureInitialized();
+      const note = store.create(input);
+      await persist();
+      return note;
+    },
+    async listNotes() {
+      ensureInitialized();
+      return store.list();
+    },
+    async openNote(noteId) {
+      ensureInitialized();
+      return store.get(noteId);
+    },
+    async updateNote(noteId, input) {
+      ensureInitialized();
+      const note = store.update(noteId, input);
+      await persist();
+      return note;
+    },
+    async resolveLink(sourceNoteId, targetTitle) {
+      ensureInitialized();
+      const source = store.get(sourceNoteId);
+      if (source === undefined) {
+        throw new Error(`note not found: ${sourceNoteId}`);
+      }
+      const normalizedTitle = targetTitle.trim();
+      if (!normalizedTitle) {
+        throw new Error('target title is required');
+      }
+      const target = store.list().find((note) => note.title === normalizedTitle)
+        ?? store.createPlaceholder(normalizedTitle);
+      const backlink: Backlink = {
+        id: source.id,
+        title: source.title,
+        linkText: `[[${normalizedTitle}]]`,
+      };
+      const linkedTarget = store.addBacklink(target.id, backlink);
+      await persist();
+      return linkedTarget;
+    },
+    async search(query, tag) {
+      ensureInitialized();
+      return store.search(query, tag);
+    },
+    async getGraph(noteId) {
+      ensureInitialized();
+      const center = store.get(noteId);
+      if (center === undefined) {
+        throw new Error(`note not found: ${noteId}`);
+      }
+      return buildGraph(center, store.list());
+    },
+  };
+}

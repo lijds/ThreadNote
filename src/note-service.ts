@@ -1,6 +1,8 @@
-import { randomUUID } from 'node:crypto';
-
 const DEFAULT_TITLE = 'Untitled note';
+
+function createId(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 export interface CreateNoteInput {
   title?: string;
@@ -46,7 +48,7 @@ function createNoteRecord(title: string, body: string, tags: string[]): Note {
   const timestamp = createTimestamp();
 
   return {
-    id: `note-${randomUUID()}`,
+    id: `note-${createId()}`,
     title,
     body,
     tags,

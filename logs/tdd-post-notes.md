@@ -19,3 +19,15 @@
 
 - Generalized the `backlinks` type to the OpenAPI `Backlink` shape without changing the initial empty collection returned by creation.
 - Refactor validation: `npm.cmd test` passed and `npm.cmd run typecheck` passed.
+
+## Ticket #5 Red
+
+- Added the FR-03 acceptance test for updating a note with an empty title.
+- Red result: `npm.cmd test` failed because `updateNote` was not exported by the service.
+
+## Ticket #5 Green and Refactor
+
+- Implemented `updateNote` with shared title normalization; empty or whitespace-only titles become `Untitled note`.
+- `npm.cmd test` passed: 3 tests, 3 passed, 0 failed.
+- Refactored timestamp creation into one helper shared by create and update.
+- Final validation: `npm.cmd test` and `npm.cmd run typecheck` passed.

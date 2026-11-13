@@ -8,6 +8,12 @@ export interface CreateNoteInput {
   tags?: string[];
 }
 
+export interface UpdateNoteInput {
+  title?: string;
+  body?: string;
+  tags?: string[];
+}
+
 export interface Backlink {
   id: string;
   title: string;
@@ -32,12 +38,16 @@ function normalizeTags(tags: string[] | undefined): string[] {
   return [...(tags ?? [])];
 }
 
+function createTimestamp(): string {
+  return new Date().toISOString();
+}
+
 export function createNote(input: CreateNoteInput): Note {
   if (!input.body) {
     throw new Error('body is required');
   }
 
-  const timestamp = new Date().toISOString();
+  const timestamp = createTimestamp();
 
   return {
     id: `note-${randomUUID()}`,
@@ -47,5 +57,16 @@ export function createNote(input: CreateNoteInput): Note {
     createdAt: timestamp,
     updatedAt: timestamp,
     backlinks: [],
+  };
+}
+
+export function updateNote(note: Note, input: UpdateNoteInput): Note {
+  return {
+    ...note,
+    title: input.title === undefined ? note.title : normalizeTitle(input.title),
+    body: input.body ?? note.body,
+    tags: input.tags === undefined ? [...note.tags] : normalizeTags(input.tags),
+    backlinks: [...note.backlinks],
+    updatedAt: createTimestamp(),
   };
 }

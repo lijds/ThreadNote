@@ -9,6 +9,7 @@ import {
   createPersistentNoteStore,
 } from '../src/note-store.js';
 import { createNotesController } from '../src/note-controller.js';
+import { createMarkdownEditor, renderMarkdown } from '../src/markdown-editor.js';
 
 test('creates a note with contract metadata and a generated title', () => {
   const note = createNote({ body: '# Project plan', tags: ['work'] });
@@ -126,4 +127,37 @@ test('supports the complete note lifecycle and paginated list', async () => {
   } finally {
     await rm(sandbox, { recursive: true, force: true });
   }
+});
+
+test('renders the required basic Markdown syntax', () => {
+  const markdown = '# Heading\n\n- first\n- second\n\n**bold** and *italic*\n\n> quote\n\nParagraph';
+
+  const rendered = renderMarkdown(markdown);
+
+  assert.match(rendered, /<h1[^>]*>Heading<\/h1>/);
+  assert.match(rendered, /<ul>[\s\S]*<li>first<\/li>[\s\S]*<li>second<\/li>[\s\S]*<\/ul>/);
+  assert.match(rendered, /<strong>bold<\/strong>/);
+  assert.match(rendered, /<em>italic<\/em>/);
+  assert.match(rendered, /<blockquote>[\s\S]*quote[\s\S]*<\/blockquote>/);
+  assert.match(rendered, /<p>Paragraph<\/p>/);
+});
+
+test('switches editor and preview modes without losing Markdown input', () => {
+  const editor = createMarkdownEditor('# Draft');
+
+  assert.equal(editor.mode, 'edit');
+  assert.equal(editor.markdown, '# Draft');
+
+  const preview = editor.setMode('preview');
+  assert.equal(preview.mode, 'preview');
+  assert.equal(preview.markdown, '# Draft');
+  assert.match(preview.rendered, /<h1[^>]*>Draft<\/h1>/);
+
+  const edited = preview.setMarkdown('## Updated draft');
+  assert.equal(edited.markdown, '## Updated draft');
+  assert.equal(edited.mode, 'preview');
+
+  const editMode = edited.setMode('edit');
+  assert.equal(editMode.mode, 'edit');
+  assert.equal(editMode.markdown, '## Updated draft');
 });

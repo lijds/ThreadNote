@@ -8,6 +8,7 @@ import {
   createOfflineNoteStore,
   createPersistentNoteStore,
 } from '../src/note-store.js';
+import { createNotesController } from '../src/note-controller.js';
 
 test('creates a note with contract metadata and a generated title', () => {
   const note = createNote({ body: '# Project plan', tags: ['work'] });
@@ -70,6 +71,58 @@ test('persists notes in the application sandbox across store instances', async (
     const reopenedStore = await createPersistentNoteStore(storagePath);
 
     assert.deepEqual(await reopenedStore.get(createdNote.id), updatedNote);
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
+});
+
+test('supports the complete note lifecycle and paginated list', async () => {
+  const sandbox = await mkdtemp(path.join(os.tmpdir(), 'threadnote-'));
+  const storagePath = path.join(sandbox, 'notes.json');
+
+  try {
+    const store = await createPersistentNoteStore(storagePath);
+    const controller = createNotesController(store);
+    const createdNote = await controller.create({
+      title: 'Lifecycle note',
+      body: 'Initial content',
+      tags: ['work'],
+    });
+
+    const listedNotes = await controller.list({ page: 1, limit: 20 });
+    assert.equal(listedNotes.status, 200);
+    assert.equal(listedNotes.body.total, 1);
+    assert.deepEqual(listedNotes.body.items[0], {
+      id: createdNote.id,
+      title: 'Lifecycle note',
+      updatedAt: createdNote.updatedAt,
+    });
+
+    const openedNote = await controller.get(createdNote.id);
+    assert.equal(openedNote.status, 200);
+    assert.equal(openedNote.body.body, 'Initial content');
+
+    const editedNote = await controller.update(createdNote.id, {
+      body: 'Edited content',
+    });
+    assert.equal(editedNote.status, 200);
+    assert.equal(editedNote.body.body, 'Edited content');
+
+    await assert.rejects(
+      controller.delete(createdNote.id),
+      (error: unknown) => (error as { status: number }).status === 400,
+    );
+    await assert.rejects(
+      controller.delete(createdNote.id, false),
+      (error: unknown) => (error as { status: number }).status === 409,
+    );
+    const deletedNote = await controller.delete(createdNote.id, true);
+    assert.equal(deletedNote.status, 204);
+    assert.equal((await controller.list({ page: 1, limit: 20 })).body.total, 0);
+    await assert.rejects(
+      controller.get(createdNote.id),
+      (error: unknown) => (error as { status: number }).status === 404,
+    );
   } finally {
     await rm(sandbox, { recursive: true, force: true });
   }

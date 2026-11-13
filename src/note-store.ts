@@ -11,13 +11,17 @@ import {
 export interface OfflineNoteStore {
   create(input: CreateNoteInput): Note;
   get(noteId: string): Note | undefined;
+  list(): Note[];
   update(noteId: string, input: UpdateNoteInput): Note;
+  delete(noteId: string): boolean;
 }
 
 export interface PersistentNoteStore {
   create(input: CreateNoteInput): Promise<Note>;
   get(noteId: string): Promise<Note | undefined>;
+  list(): Promise<Note[]>;
   update(noteId: string, input: UpdateNoteInput): Promise<Note>;
+  delete(noteId: string): Promise<boolean>;
 }
 
 function copyNote(note: Note): Note {
@@ -50,11 +54,17 @@ export function createOfflineNoteStore(): OfflineNoteStore {
       const note = notes.get(noteId);
       return note === undefined ? undefined : copyNote(note);
     },
+    list() {
+      return [...notes.values()].map(copyNote);
+    },
     update(noteId, input) {
       const note = requireNote(notes, noteId);
       const updatedNote = updateNote(note, input);
       notes.set(noteId, updatedNote);
       return copyNote(updatedNote);
+    },
+    delete(noteId) {
+      return notes.delete(noteId);
     },
   };
 }
@@ -100,12 +110,23 @@ export async function createPersistentNoteStore(storagePath: string): Promise<Pe
       const note = notes.get(noteId);
       return note === undefined ? undefined : copyNote(note);
     },
+    async list() {
+      return [...notes.values()].map(copyNote);
+    },
     async update(noteId, input) {
       const note = requireNote(notes, noteId);
       const updatedNote = updateNote(note, input);
       notes.set(noteId, updatedNote);
       await persistNotes(storagePath, notes);
       return copyNote(updatedNote);
+    },
+    async delete(noteId) {
+      const deleted = notes.delete(noteId);
+      if (deleted) {
+        await persistNotes(storagePath, notes);
+      }
+
+      return deleted;
     },
   };
 }
